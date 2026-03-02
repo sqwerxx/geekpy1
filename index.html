@@ -603,10 +603,32 @@
                 text-align: center;
             }
         }
+
+        /* Загрузка */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer" style="display: none;">
         <!-- Профиль пользователя -->
         <div class="card" id="profileCard">
             <div class="profile-section">
@@ -675,7 +697,6 @@
                 </div>
             </div>
             <div class="rewards-list" id="rewardsList">
-                <!-- Награды будут добавляться динамически -->
                 <div class="reward-item">
                     <div class="reward-icon">⏳</div>
                     <div class="reward-info">
@@ -733,6 +754,10 @@
         </button>
     </div>
 
+    <div class="loading" id="loadingSpinner">
+        <div class="loading-spinner"></div>
+    </div>
+
     <!-- Модальное окно -->
     <div class="modal" id="rewardModal">
         <div class="modal-content">
@@ -751,38 +776,91 @@
     </div>
 
     <script>
+    // Функция для декодирования данных из URL
+    function getDataFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedData = urlParams.get('data');
+        
+        if (encodedData) {
+            try {
+                const jsonStr = atob(encodedData);
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('Ошибка декодирования данных:', e);
+                return null;
+            }
+        }
+        return null;
+    }
+
     // Инициализация Telegram WebApp
     const tg = window.Telegram?.WebApp;
     
     if (!tg) {
         console.error('Telegram WebApp не доступен');
-        // Показываем сообщение для тестирования в браузере
-        document.body.innerHTML = '<div style="padding: 20px; text-align: center;">⚠️ Это приложение работает только в Telegram</div>';
+        document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: white;">⚠️ Это приложение работает только в Telegram</div>';
     } else {
+        // Показываем загрузку
+        document.getElementById('loadingSpinner').style.display = 'flex';
+        
         tg.expand();
         tg.ready();
         console.log('Telegram WebApp инициализирован');
         tg.MainButton.setText('Закрыть');
         tg.MainButton.hide();
 
-        // Получаем данные пользователя
-        const user = tg.initDataUnsafe?.user;
-        
-        // Данные пользователя
+        // Получаем данные из URL (от бота)
+        const botData = getDataFromUrl();
+        console.log('Данные от бота:', botData);
+
+        // Получаем данные пользователя из Telegram
+        const tgUser = tg.initDataUnsafe?.user;
+
+        // Формируем userData с приоритетом: данные от бота > данные Telegram > значения по умолчанию
         let userData = {
-            id: user?.id || 123456,
-            firstName: user?.first_name || 'Пользователь',
-            lastName: user?.last_name || '',
-            username: user?.username || 'username',
-            currentStreak: 7,
-            maxStreak: 15,
-            totalTasks: 45,
-            starsBalance: 12,
-            lastActivity: new Date().toISOString().split('T')[0],
-            claimedRewards: [7]
+            id: botData?.user?.id || tgUser?.id || 123456,
+            firstName: botData?.user?.first_name || tgUser?.first_name || 'Пользователь',
+            lastName: botData?.user?.last_name || tgUser?.last_name || '',
+            username: botData?.user?.username || tgUser?.username || 'username',
+            currentStreak: botData?.stats?.currentStreak || 0,
+            maxStreak: botData?.stats?.maxStreak || 0,
+            totalTasks: botData?.stats?.totalTasks || 0,
+            starsBalance: botData?.stats?.starsBalance || 0,
+            lastActivity: botData?.stats?.lastActivity || new Date().toISOString().split('T')[0],
+            claimedRewards: botData?.stats?.claimedRewards || []
         };
 
-        console.log('Пользовательские данные:', userData);
+        console.log('Итоговые данные пользователя:', userData);
+
+        // Если нет данных от бота, запрашиваем их
+        if (!botData?.stats) {
+            tg.sendData(JSON.stringify({
+                action: 'get_user_stats',
+                user_id: userData.id
+            }));
+        }
+
+        // Слушаем сообщения от бота
+        tg.onEvent('message', function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.action === 'update_stats') {
+                    userData.currentStreak = data.stats.currentStreak;
+                    userData.maxStreak = data.stats.maxStreak;
+                    userData.totalTasks = data.stats.totalTasks;
+                    userData.starsBalance = data.stats.starsBalance;
+                    userData.claimedRewards = data.stats.claimedRewards;
+                    
+                    updateUserInfo();
+                    updateStats();
+                    loadRewards();
+                    
+                    showToast('Статистика обновлена!', 'success');
+                }
+            } catch (e) {
+                console.error('Ошибка при обработке сообщения от бота:', e);
+            }
+        });
 
         // База заданий
         const tasksDB = [
@@ -850,16 +928,22 @@
 
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', () => {
-            updateUserInfo();
-            updateStats();
-            loadRewards();
-            checkDailyActivity();
-            
-            // Отправляем данные боту о загрузке приложения
-            tg.sendData(JSON.stringify({
-                action: 'webapp_loaded',
-                user_id: userData.id
-            }));
+            // Прячем спиннер и показываем контент
+            setTimeout(() => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+                
+                updateUserInfo();
+                updateStats();
+                loadRewards();
+                checkDailyActivity();
+                
+                // Отправляем данные боту о загрузке приложения
+                tg.sendData(JSON.stringify({
+                    action: 'webapp_loaded',
+                    user_id: userData.id
+                }));
+            }, 500);
         });
 
         // Обновление информации о пользователе
@@ -1028,6 +1112,7 @@
                 // Отправляем данные боту
                 tg.sendData(JSON.stringify({
                     action: 'task_completed',
+                    user_id: userData.id,
                     task_id: currentTask.id,
                     correct: true,
                     new_streak: userData.currentStreak
@@ -1045,6 +1130,7 @@
                 
                 tg.sendData(JSON.stringify({
                     action: 'task_completed',
+                    user_id: userData.id,
                     task_id: currentTask.id,
                     correct: false,
                     streak: userData.currentStreak
@@ -1081,6 +1167,7 @@
             // Отправляем данные боту
             tg.sendData(JSON.stringify({
                 action: 'reward_claimed',
+                user_id: userData.id,
                 streak: streak,
                 reward_type: reward.type
             }));
@@ -1107,6 +1194,7 @@
             
             tg.sendData(JSON.stringify({
                 action: 'streak_restored',
+                user_id: userData.id,
                 new_streak: userData.currentStreak
             }));
         }
@@ -1116,20 +1204,17 @@
             const today = new Date().toISOString().split('T')[0];
             
             if (userData.lastActivity !== today) {
-                // Показываем напоминание
                 showToast('Выполните задание сегодня! 🔥', 'warning');
             }
         }
 
         // Переключение секций
         function showSection(section) {
-            // Обновляем активную кнопку
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             event.currentTarget.classList.add('active');
             
-            // Показываем соответствующую секцию
             switch(section) {
                 case 'home':
                     document.getElementById('profileCard').style.display = 'block';
@@ -1180,7 +1265,6 @@
             document.getElementById('rewardModal').classList.remove('active');
             
             if (selectedOption === currentTask?.correct) {
-                // После правильного ответа возвращаемся к главной
                 document.getElementById('taskCard').style.display = 'none';
                 document.getElementById('startTaskMainBtn').style.display = 'block';
                 currentTask = null;
@@ -1230,8 +1314,7 @@
                 user_id: userData.id
             }));
         });
-    } // <-- Этой закрывающей скобки не хватало для else
-</script>
+    }
+    </script>
 </body>
-
 </html>
