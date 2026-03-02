@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeekPy - Изучай Python с огоньком!</title>
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5649c0;
+            --secondary: #a463f5;
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #fdcb6e;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            padding: 16px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes flameFlicker {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Карточки */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: fadeIn 0.5s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Профиль */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .profile-username {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 16px;
+            padding: 12px 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.7em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            font-size: 1.2em;
+            margin-bottom: 4px;
+        }
+
+        /* Прогресс-бар */
+        .progress-container {
+            background: white;
+            border-radius: 30px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 16px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 8px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Задание */
+        .task-section {
+            animation: slideIn 0.5s ease;
+        }
+
+        .task-question {
+            font-size: 1.2em;
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--light);
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .task-options {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .task-option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1em;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-option:hover:not(:disabled) {
+            border-color: var(--primary);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.1);
+        }
+
+        .task-option.selected {
+            border-color: var(--primary);
+            background: rgba(108, 92, 231, 0.05);
+        }
+
+        .task-option.correct {
+            border-color: var(--success);
+            background: rgba(0, 184, 148, 0.1);
+        }
+
+        .task-option.wrong {
+            border-color: var(--danger);
+            background: rgba(214, 48, 49, 0.1);
+        }
+
+        .task-option:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+
+        .option-marker {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+
+        /* Награды */
+        .rewards-list {
+            display: grid;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .rewards-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .rewards-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .rewards-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .reward-item {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .reward-item.available {
+            border-color: var(--success);
+            background: rgba(0, 184, 148, 0.05);
+            cursor: pointer;
+        }
+
+        .reward-item.available:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.2);
+        }
+
+        .reward-item.completed {
+            opacity: 0.6;
+            background: #f5f5f5;
+        }
+
+        .reward-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .reward-info {
+            flex: 1;
+        }
+
+        .reward-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .reward-desc {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .reward-status {
+            font-size: 0.8em;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #e0e0e0;
+        }
+
+        .reward-status.available {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Кнопки */
+        .button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px 24px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255,255,255,0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        .button:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(40, 40);
+                opacity: 0;
+            }
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .button-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .modal-text {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+
+        /* Стрик-индикатор */
+        .streak-flame {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            animation: flameFlicker 2s infinite;
+        }
+
+        /* Навигация */
+        .nav-menu {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .nav-item {
+            background: white;
+            border-radius: 16px;
+            padding: 12px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8em;
+        }
+
+        .nav-item.active {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .nav-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .nav-icon {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+        }
+
+        /* Уведомления */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            border-radius: 30px;
+            padding: 12px 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s;
+            z-index: 999;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .nav-menu {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .profile-section {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Профиль пользователя -->
+        <div class="card" id="profileCard">
+            <div class="profile-section">
+                <div class="profile-avatar" id="userAvatar">👤</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="userName">Загрузка...</div>
+                    <div class="profile-username" id="userUsername">@username</div>
+                </div>
+            </div>
+            
+            <div class="streak-flame" id="streakDisplay">
+                <span>🔥</span>
+                <span id="currentStreak">0</span>
+                <span>дней</span>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>📊</span> Статистика
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-value" id="statCurrentStreak">0</div>
+                    <div class="stat-label">Текущий</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="statMaxStreak">0</div>
+                    <div class="stat-label">Макс</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-value" id="statTotalTasks">0</div>
+                    <div class="stat-label">Заданий</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="statStars">0</div>
+                    <div class="stat-label">Звёзд</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Прогресс до следующей награды -->
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>🔥 До следующей награды</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Награды -->
+        <div class="card" id="rewardsCard">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>🏆</span> Доступные награды
+                </div>
+            </div>
+            <div class="rewards-list" id="rewardsList">
+                <!-- Награды будут добавляться динамически -->
+                <div class="reward-item">
+                    <div class="reward-icon">⏳</div>
+                    <div class="reward-info">
+                        <div class="reward-title">Загрузка...</div>
+                        <div class="reward-desc">Пожалуйста, подождите</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Задание дня -->
+        <div class="card" id="taskCard" style="display: none;">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>📝</span> Задание дня
+                </div>
+            </div>
+            
+            <div class="task-section">
+                <div class="task-question" id="taskQuestion"></div>
+                <div class="task-options" id="taskOptions"></div>
+                <button class="button" id="submitTaskBtn" onclick="submitTask()">
+                    <span>✅</span> Проверить ответ
+                </button>
+            </div>
+        </div>
+
+        <!-- Навигация -->
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="showSection('home')">
+                <div class="nav-icon">🏠</div>
+                <div>Главная</div>
+            </div>
+            <div class="nav-item" onclick="showSection('tasks')">
+                <div class="nav-icon">📚</div>
+                <div>Задания</div>
+            </div>
+            <div class="nav-item" onclick="showSection('rewards')">
+                <div class="nav-icon">🏆</div>
+                <div>Награды</div>
+            </div>
+            <div class="nav-item" onclick="showSection('shop')">
+                <div class="nav-icon">⭐</div>
+                <div>Магазин</div>
+            </div>
+        </div>
+
+        <!-- Основные кнопки -->
+        <button class="button" id="startTaskMainBtn" onclick="loadNewTask()">
+            <span>📚</span> Начать урок
+        </button>
+
+        <button class="button button-outline" id="restoreStreakBtn" onclick="restoreStreak()">
+            <span>🔄</span> Восстановить стрик (9 ⭐)
+        </button>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="rewardModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-icon" id="modalIcon">🎉</div>
+            <div class="modal-title" id="modalTitle">Поздравляем!</div>
+            <div class="modal-text" id="modalText">Вы получили награду!</div>
+            <button class="button" onclick="closeModal()">Отлично!</button>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✅</span>
+        <span id="toastMessage">Уведомление</span>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        tg.MainButton.setText('Закрыть');
+        tg.MainButton.hide();
+
+        // Данные пользователя (в реальном приложении получаем от бота)
+        let userData = {
+            id: tg.initDataUnsafe?.user?.id || 123456,
+            firstName: tg.initDataUnsafe?.user?.first_name || 'Пользователь',
+            lastName: tg.initDataUnsafe?.user?.last_name || '',
+            username: tg.initDataUnsafe?.user?.username || 'username',
+            currentStreak: 7,
+            maxStreak: 15,
+            totalTasks: 45,
+            starsBalance: 12,
+            lastActivity: new Date().toISOString().split('T')[0],
+            claimedRewards: [7] // ID полученных наград
+        };
+
+        // База заданий
+        const tasksDB = [
+            {
+                id: 1,
+                question: "Какой метод используется для добавления элемента в список?",
+                options: ["add()", "append()", "insert()", "push()"],
+                correct: 1,
+                explanation: "append() добавляет элемент в конец списка"
+            },
+            {
+                id: 2,
+                question: "Что выведет код: print(type([]))?",
+                options: ["<class 'list'>", "<class 'dict'>", "<class 'tuple'>", "Ошибка"],
+                correct: 0,
+                explanation: "[] создает пустой список, тип - list"
+            },
+            {
+                id: 3,
+                question: "Как получить длину строки в Python?",
+                options: ["len()", "length()", "size()", "strlen()"],
+                correct: 0,
+                explanation: "len() - встроенная функция для получения длины"
+            },
+            {
+                id: 4,
+                question: "Какая команда выводит информацию на экран?",
+                options: ["input()", "print()", "output()", "display()"],
+                correct: 1,
+                explanation: "print() используется для вывода данных на экран"
+            },
+            {
+                id: 5,
+                question: "Какой тип данных используется для целых чисел?",
+                options: ["float", "str", "int", "bool"],
+                correct: 2,
+                explanation: "int (integer) - целые числа"
+            },
+            {
+                id: 6,
+                question: "Что такое PEP8?",
+                options: [
+                    "Версия Python",
+                    "Стиль кодирования",
+                    "Библиотека",
+                    "Фреймворк"
+                ],
+                correct: 1,
+                explanation: "PEP8 - это руководство по стилю написания кода на Python"
+            }
+        ];
+
+        // Конфигурация наград
+        const rewardsConfig = [
+            { streak: 7, name: 'Новичок', description: '7 дней без перерыва!', type: 'badge', icon: '🎯' },
+            { streak: 14, name: '5 Telegram Stars', description: '5 Telegram Stars', type: 'stars', amount: 5, icon: '⭐' },
+            { streak: 30, name: '15 Telegram Stars', description: '15 Telegram Stars', type: 'stars', amount: 15, icon: '⭐⭐' },
+            { streak: 50, name: 'Мастер Python', description: '50 дней! Вы настоящий мастер!', type: 'badge', icon: '👑' },
+            { streak: 100, name: 'Telegram Premium', description: '1 месяц Premium', type: 'premium', icon: '🚀' }
+        ];
+
+        let currentTask = null;
+        let selectedOption = -1;
+        let toastTimeout = null;
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUserInfo();
+            updateStats();
+            loadRewards();
+            checkDailyActivity();
+            
+            // Отправляем данные боту о загрузке приложения
+            tg.sendData(JSON.stringify({
+                action: 'webapp_loaded',
+                user_id: userData.id
+            }));
+        });
+
+        // Обновление информации о пользователе
+        function updateUserInfo() {
+            document.getElementById('userName').textContent = 
+                `${userData.firstName} ${userData.lastName}`.trim();
+            document.getElementById('userUsername').textContent = 
+                `@${userData.username}`;
+            document.getElementById('userAvatar').textContent = 
+                userData.firstName.charAt(0).toUpperCase();
+            document.getElementById('currentStreak').textContent = userData.currentStreak;
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            document.getElementById('statCurrentStreak').textContent = userData.currentStreak;
+            document.getElementById('statMaxStreak').textContent = userData.maxStreak;
+            document.getElementById('statTotalTasks').textContent = userData.totalTasks;
+            document.getElementById('statStars').textContent = userData.starsBalance;
+
+            // Обновление прогресса до следующей награды
+            const nextReward = rewardsConfig.find(r => r.streak > userData.currentStreak);
+            if (nextReward) {
+                const progress = (userData.currentStreak / nextReward.streak) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressText').textContent = Math.round(progress) + '%';
+            } else if (userData.currentStreak >= 100) {
+                document.getElementById('progressFill').style.width = '100%';
+                document.getElementById('progressText').textContent = '100%';
+            }
+        }
+
+        // Загрузка наград
+        function loadRewards() {
+            const rewardsList = document.getElementById('rewardsList');
+            rewardsList.innerHTML = '';
+
+            rewardsConfig.forEach(reward => {
+                const isAvailable = userData.currentStreak >= reward.streak && 
+                                   !userData.claimedRewards.includes(reward.streak);
+                const isCompleted = userData.claimedRewards.includes(reward.streak);
+
+                const rewardItem = document.createElement('div');
+                rewardItem.className = `reward-item ${isAvailable ? 'available' : ''} ${isCompleted ? 'completed' : ''}`;
+                
+                if (isAvailable) {
+                    rewardItem.onclick = () => claimReward(reward.streak);
+                }
+
+                let statusText = '';
+                let statusClass = '';
+                
+                if (isCompleted) {
+                    statusText = '✓ Получено';
+                    statusClass = '';
+                } else if (isAvailable) {
+                    statusText = '🎁 Получить';
+                    statusClass = 'available';
+                } else {
+                    statusText = `🔒 ${reward.streak - userData.currentStreak} дней`;
+                    statusClass = '';
+                }
+
+                rewardItem.innerHTML = `
+                    <div class="reward-icon">${reward.icon}</div>
+                    <div class="reward-info">
+                        <div class="reward-title">🔥 ${reward.streak} дней: ${reward.name}</div>
+                        <div class="reward-desc">${reward.description}</div>
+                    </div>
+                    <div class="reward-status ${statusClass}">${statusText}</div>
+                `;
+
+                rewardsList.appendChild(rewardItem);
+            });
+        }
+
+        // Загрузка нового задания
+        function loadNewTask() {
+            currentTask = tasksDB[Math.floor(Math.random() * tasksDB.length)];
+            selectedOption = -1;
+            
+            document.getElementById('taskCard').style.display = 'block';
+            document.getElementById('startTaskMainBtn').style.display = 'none';
+            document.getElementById('taskQuestion').textContent = currentTask.question;
+            
+            const optionsDiv = document.getElementById('taskOptions');
+            optionsDiv.innerHTML = '';
+            
+            currentTask.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'task-option';
+                button.innerHTML = `
+                    ${option}
+                    <span class="option-marker"></span>
+                `;
+                button.onclick = () => selectOption(index);
+                optionsDiv.appendChild(button);
+            });
+            
+            document.getElementById('submitTaskBtn').disabled = true;
+            
+            // Плавный скролл к заданию
+            document.getElementById('taskCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Выбор варианта ответа
+        function selectOption(index) {
+            selectedOption = index;
+            
+            document.querySelectorAll('.task-option').forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('selected');
+                    btn.querySelector('.option-marker').textContent = '✓';
+                } else {
+                    btn.classList.remove('selected');
+                    btn.querySelector('.option-marker').textContent = '';
+                }
+            });
+            
+            document.getElementById('submitTaskBtn').disabled = false;
+        }
+
+        // Отправка задания
+        function submitTask() {
+            if (selectedOption === -1 || !currentTask) return;
+            
+            const isCorrect = selectedOption === currentTask.correct;
+            
+            // Блокируем все опции
+            document.querySelectorAll('.task-option').forEach((btn, i) => {
+                btn.onclick = null;
+                btn.style.cursor = 'default';
+                
+                if (i === currentTask.correct) {
+                    btn.classList.add('correct');
+                    btn.querySelector('.option-marker').textContent = '✓';
+                } else if (i === selectedOption && !isCorrect) {
+                    btn.classList.add('wrong');
+                    btn.querySelector('.option-marker').textContent = '✗';
+                }
+            });
+            
+            document.getElementById('submitTaskBtn').disabled = true;
+            
+            if (isCorrect) {
+                // Правильный ответ
+                userData.currentStreak++;
+                userData.totalTasks++;
+                
+                if (userData.currentStreak > userData.maxStreak) {
+                    userData.maxStreak = userData.currentStreak;
+                }
+                
+                userData.lastActivity = new Date().toISOString().split('T')[0];
+                
+                updateStats();
+                loadRewards();
+                
+                // Показываем модальное окно
+                showModal(
+                    '✅ Правильно!',
+                    currentTask.explanation,
+                    '🎉'
+                );
+                
+                // Отправляем данные боту
+                tg.sendData(JSON.stringify({
+                    action: 'task_completed',
+                    task_id: currentTask.id,
+                    correct: true,
+                    new_streak: userData.currentStreak
+                }));
+                
+                // Показываем уведомление
+                showToast('Задание выполнено! 🔥', 'success');
+            } else {
+                // Неправильный ответ
+                showModal(
+                    '❌ Неправильно',
+                    currentTask.explanation,
+                    '💡'
+                );
+                
+                tg.sendData(JSON.stringify({
+                    action: 'task_completed',
+                    task_id: currentTask.id,
+                    correct: false,
+                    streak: userData.currentStreak
+                }));
+                
+                showToast('Попробуйте снова!', 'error');
+            }
+        }
+
+        // Получение награды
+        function claimReward(streak) {
+            const reward = rewardsConfig.find(r => r.streak === streak);
+            
+            if (!reward) return;
+            
+            // Добавляем награду в полученные
+            userData.claimedRewards.push(streak);
+            
+            // Начисляем бонусы
+            if (reward.type === 'stars') {
+                userData.starsBalance += reward.amount;
+            }
+            
+            updateStats();
+            loadRewards();
+            
+            // Показываем уведомление
+            showModal(
+                '🎁 Награда получена!',
+                `Вы получили: ${reward.description}`,
+                reward.icon
+            );
+            
+            // Отправляем данные боту
+            tg.sendData(JSON.stringify({
+                action: 'reward_claimed',
+                streak: streak,
+                reward_type: reward.type
+            }));
+        }
+
+        // Восстановление стрика
+        function restoreStreak() {
+            if (userData.starsBalance < 9) {
+                showToast('Недостаточно звёзд! ⭐', 'error');
+                return;
+            }
+            
+            userData.starsBalance -= 9;
+            userData.currentStreak++;
+            userData.lastActivity = new Date().toISOString().split('T')[0];
+            
+            updateStats();
+            
+            showModal(
+                '🔥 Стрик восстановлен!',
+                'Ваш стрик успешно восстановлен за 9 звёзд.',
+                '⭐'
+            );
+            
+            tg.sendData(JSON.stringify({
+                action: 'streak_restored',
+                new_streak: userData.currentStreak
+            }));
+        }
+
+        // Проверка ежедневной активности
+        function checkDailyActivity() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (userData.lastActivity !== today) {
+                // Показываем напоминание
+                showToast('Выполните задание сегодня! 🔥', 'warning');
+            }
+        }
+
+        // Переключение секций
+        function showSection(section) {
+            // Обновляем активную кнопку
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // Показываем соответствующую секцию
+            switch(section) {
+                case 'home':
+                    document.getElementById('profileCard').style.display = 'block';
+                    document.getElementById('rewardsCard').style.display = 'block';
+                    document.getElementById('taskCard').style.display = 'none';
+                    document.getElementById('startTaskMainBtn').style.display = 'block';
+                    break;
+                    
+                case 'tasks':
+                    document.getElementById('profileCard').style.display = 'none';
+                    document.getElementById('rewardsCard').style.display = 'none';
+                    document.getElementById('taskCard').style.display = 'block';
+                    document.getElementById('startTaskMainBtn').style.display = 'none';
+                    
+                    if (!currentTask) {
+                        loadNewTask();
+                    }
+                    break;
+                    
+                case 'rewards':
+                    document.getElementById('profileCard').style.display = 'none';
+                    document.getElementById('rewardsCard').style.display = 'block';
+                    document.getElementById('taskCard').style.display = 'none';
+                    document.getElementById('startTaskMainBtn').style.display = 'none';
+                    loadRewards();
+                    break;
+                    
+                case 'shop':
+                    showModal(
+                        '⭐ Магазин',
+                        'Восстановление стрика - 9 ⭐\n\nСкоро здесь появятся новые товары!',
+                        '🛍️'
+                    );
+                    break;
+            }
+        }
+
+        // Показ модального окна
+        function showModal(title, text, icon = '🎉') {
+            document.getElementById('modalIcon').textContent = icon;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            document.getElementById('rewardModal').classList.add('active');
+        }
+
+        // Закрытие модального окна
+        function closeModal() {
+            document.getElementById('rewardModal').classList.remove('active');
+            
+            if (selectedOption === currentTask?.correct) {
+                // После правильного ответа возвращаемся к главной
+                document.getElementById('taskCard').style.display = 'none';
+                document.getElementById('startTaskMainBtn').style.display = 'block';
+                currentTask = null;
+            }
+        }
+
+        // Показ уведомления
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+            
+            toast.className = `toast show ${type}`;
+            
+            switch(type) {
+                case 'success':
+                    icon.textContent = '✅';
+                    break;
+                case 'error':
+                    icon.textContent = '❌';
+                    break;
+                case 'warning':
+                    icon.textContent = '⚠️';
+                    break;
+            }
+            
+            msg.textContent = message;
+            
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+            
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Обработка закрытия приложения
+        tg.onEvent('mainButtonClicked', function() {
+            tg.close();
+        });
+
+        // Отправка данных при закрытии
+        window.addEventListener('beforeunload', function() {
+            tg.sendData(JSON.stringify({
+                action: 'webapp_closed',
+                user_id: userData.id
+            }));
+        });
+    </script>
+</body>
+</html>
