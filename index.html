@@ -752,11 +752,23 @@
 
     <script>
         // Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
+        const tg = window.Telegram?.WebApp;
+    
+    if (!tg) {
+        console.error('Telegram WebApp не доступен');
+        // Показываем сообщение для тестирования в браузере
+        document.body.innerHTML = '<div style="padding: 20px; text-align: center;">⚠️ Это приложение работает только в Telegram</div>';
+    } else {
         tg.expand();
         tg.ready();
+        console.log('Telegram WebApp инициализирован');
         tg.MainButton.setText('Закрыть');
         tg.MainButton.hide();
+
+	// Получаем данные пользователя
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            console.log('Пользователь:', user);
 
         // Данные пользователя (в реальном приложении получаем от бота)
         let userData = {
