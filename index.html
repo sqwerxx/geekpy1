@@ -91,6 +91,43 @@
             gap: 8px;
         }
 
+/* Индикатор выполнения задания на сегодня */
+.daily-status {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+}
+
+.daily-status.completed {
+    background: rgba(0, 184, 148, 0.2);
+    border-left: 4px solid var(--success);
+}
+
+.daily-status.pending {
+    background: rgba(253, 203, 110, 0.2);
+    border-left: 4px solid var(--warning);
+}
+
+.status-icon {
+    font-size: 1.2em;
+}
+
+.status-text {
+    flex: 1;
+}
+
+.status-badge {
+    background: var(--primary);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+}
         /* Профиль */
         .profile-section {
             display: flex;
@@ -646,6 +683,13 @@
             </div>
         </div>
 
+        <!-- Статус ежедневного задания -->
+    <div class="daily-status" id="dailyStatus">
+        <span class="status-icon" id="statusIcon">⏳</span>
+        <span class="status-text" id="statusText">Проверка...</span>
+        <span class="status-badge" id="statusBadge"></span>
+    </div>
+        
         <!-- Статистика -->
         <div class="card">
             <div class="card-header">
@@ -955,26 +999,30 @@
             document.getElementById('userAvatar').textContent = 
                 userData.firstName.charAt(0).toUpperCase();
             document.getElementById('currentStreak').textContent = userData.currentStreak;
+            updateDailyStatus(); 
         }
 
         // Обновление статистики
-        function updateStats() {
-            document.getElementById('statCurrentStreak').textContent = userData.currentStreak;
-            document.getElementById('statMaxStreak').textContent = userData.maxStreak;
-            document.getElementById('statTotalTasks').textContent = userData.totalTasks;
-            document.getElementById('statStars').textContent = userData.starsBalance;
+function updateStats() {
+    document.getElementById('statCurrentStreak').textContent = userData.currentStreak;
+    document.getElementById('statMaxStreak').textContent = userData.maxStreak;
+    document.getElementById('statTotalTasks').textContent = userData.totalTasks;
+    document.getElementById('statStars').textContent = userData.starsBalance;
 
-            // Обновление прогресса до следующей награды
-            const nextReward = rewardsConfig.find(r => r.streak > userData.currentStreak);
-            if (nextReward) {
-                const progress = (userData.currentStreak / nextReward.streak) * 100;
-                document.getElementById('progressFill').style.width = progress + '%';
-                document.getElementById('progressText').textContent = Math.round(progress) + '%';
-            } else if (userData.currentStreak >= 100) {
-                document.getElementById('progressFill').style.width = '100%';
-                document.getElementById('progressText').textContent = '100%';
-            }
-        }
+    // Обновление прогресса до следующей награды
+    const nextReward = rewardsConfig.find(r => r.streak > userData.currentStreak);
+    if (nextReward) {
+        const progress = (userData.currentStreak / nextReward.streak) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent = Math.round(progress) + '%';
+    } else if (userData.currentStreak >= 100) {
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = '100%';
+    }
+    
+    // Обновляем статус
+    updateDailyStatus();
+}
 
         // Загрузка наград
         function loadRewards() {
@@ -1021,33 +1069,43 @@
         }
 
         // Загрузка нового задания
-        function loadNewTask() {
-            currentTask = tasksDB[Math.floor(Math.random() * tasksDB.length)];
-            selectedOption = -1;
-            
-            document.getElementById('taskCard').style.display = 'block';
-            document.getElementById('startTaskMainBtn').style.display = 'none';
-            document.getElementById('taskQuestion').textContent = currentTask.question;
-            
-            const optionsDiv = document.getElementById('taskOptions');
-            optionsDiv.innerHTML = '';
-            
-            currentTask.options.forEach((option, index) => {
-                const button = document.createElement('button');
-                button.className = 'task-option';
-                button.innerHTML = `
-                    ${option}
-                    <span class="option-marker"></span>
-                `;
-                button.onclick = () => selectOption(index);
-                optionsDiv.appendChild(button);
-            });
-            
-            document.getElementById('submitTaskBtn').disabled = true;
-            
-            // Плавный скролл к заданию
-            document.getElementById('taskCard').scrollIntoView({ behavior: 'smooth' });
+function loadNewTask() {
+    const today = new Date().toISOString().split('T')[0];
+    const alreadyDoneToday = (userData.lastActivity === today);
+    
+    // Если уже выполнял сегодня, показываем предупреждение
+    if (alreadyDoneToday) {
+        if (!confirm('Вы уже выполняли задание сегодня. Стрик не увеличится, но вы можете потренироваться. Продолжить?')) {
+            return;
         }
+    }
+    
+    currentTask = tasksDB[Math.floor(Math.random() * tasksDB.length)];
+    selectedOption = -1;
+    
+    document.getElementById('taskCard').style.display = 'block';
+    document.getElementById('startTaskMainBtn').style.display = 'none';
+    document.getElementById('taskQuestion').textContent = currentTask.question;
+    
+    const optionsDiv = document.getElementById('taskOptions');
+    optionsDiv.innerHTML = '';
+    
+    currentTask.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.className = 'task-option';
+        button.innerHTML = `
+            ${option}
+            <span class="option-marker"></span>
+        `;
+        button.onclick = () => selectOption(index);
+        optionsDiv.appendChild(button);
+    });
+    
+    document.getElementById('submitTaskBtn').disabled = true;
+    
+    // Плавный скролл к заданию
+    document.getElementById('taskCard').scrollIntoView({ behavior: 'smooth' });
+}
 
         // Выбор варианта ответа
         function selectOption(index) {
@@ -1067,78 +1125,92 @@
         }
 
         // Отправка задания
-        function submitTask() {
-            if (selectedOption === -1 || !currentTask) return;
-            
-            const isCorrect = selectedOption === currentTask.correct;
-            
-            // Блокируем все опции
-            document.querySelectorAll('.task-option').forEach((btn, i) => {
-                btn.onclick = null;
-                btn.style.cursor = 'default';
-                
-                if (i === currentTask.correct) {
-                    btn.classList.add('correct');
-                    btn.querySelector('.option-marker').textContent = '✓';
-                } else if (i === selectedOption && !isCorrect) {
-                    btn.classList.add('wrong');
-                    btn.querySelector('.option-marker').textContent = '✗';
-                }
-            });
-            
-            document.getElementById('submitTaskBtn').disabled = true;
-            
-            if (isCorrect) {
-                // Правильный ответ
-                userData.currentStreak++;
-                userData.totalTasks++;
-                
-                if (userData.currentStreak > userData.maxStreak) {
-                    userData.maxStreak = userData.currentStreak;
-                }
-                
-                userData.lastActivity = new Date().toISOString().split('T')[0];
-                
-                updateStats();
-                loadRewards();
-                
-                // Показываем модальное окно
-                showModal(
-                    '✅ Правильно!',
-                    currentTask.explanation,
-                    '🎉'
-                );
-                
-                // Отправляем данные боту
-                tg.sendData(JSON.stringify({
-                    action: 'task_completed',
-                    user_id: userData.id,
-                    task_id: currentTask.id,
-                    correct: true,
-                    new_streak: userData.currentStreak
-                }));
-                
-                // Показываем уведомление
-                showToast('Задание выполнено! 🔥', 'success');
-            } else {
-                // Неправильный ответ
-                showModal(
-                    '❌ Неправильно',
-                    currentTask.explanation,
-                    '💡'
-                );
-                
-                tg.sendData(JSON.stringify({
-                    action: 'task_completed',
-                    user_id: userData.id,
-                    task_id: currentTask.id,
-                    correct: false,
-                    streak: userData.currentStreak
-                }));
-                
-                showToast('Попробуйте снова!', 'error');
-            }
+        // Отправка задания
+function submitTask() {
+    if (selectedOption === -1 || !currentTask) return;
+    
+    const isCorrect = selectedOption === currentTask.correct;
+    
+    // Блокируем все опции
+    document.querySelectorAll('.task-option').forEach((btn, i) => {
+        btn.onclick = null;
+        btn.style.cursor = 'default';
+        
+        if (i === currentTask.correct) {
+            btn.classList.add('correct');
+            btn.querySelector('.option-marker').textContent = '✓';
+        } else if (i === selectedOption && !isCorrect) {
+            btn.classList.add('wrong');
+            btn.querySelector('.option-marker').textContent = '✗';
         }
+    });
+    
+    document.getElementById('submitTaskBtn').disabled = true;
+    
+    if (isCorrect) {
+        // Проверяем, выполнял ли сегодня задание
+        const today = new Date().toISOString().split('T')[0];
+        const lastActivityDate = userData.lastActivity;
+        
+        // Временное обновление для UI (бот потом подтвердит)
+        const isFirstToday = (lastActivityDate !== today);
+        
+        if (isFirstToday) {
+            // Первое задание сегодня - увеличиваем стрик
+            userData.currentStreak++;
+            if (userData.currentStreak > userData.maxStreak) {
+                userData.maxStreak = userData.currentStreak;
+            }
+            userData.lastActivity = today;
+            
+            showModal(
+                '✅ Правильно! 🔥',
+                currentTask.explanation + '\n\nСтрик увеличен!',
+                '🎉'
+            );
+        } else {
+            // Уже выполнял сегодня - стрик не увеличиваем
+            showModal(
+                '✅ Правильно!',
+                currentTask.explanation + '\n\nВы уже выполняли задание сегодня. Стрик не увеличивается, но задание засчитано!',
+                '📚'
+            );
+        }
+        
+        // Увеличиваем общее количество заданий
+        userData.totalTasks++;
+        
+        updateStats();
+        loadRewards();
+        
+        // Отправляем данные боту
+        tg.sendData(JSON.stringify({
+            action: 'task_completed',
+            user_id: userData.id,
+            task_id: currentTask.id,
+            correct: true,
+            is_first_today: isFirstToday
+        }));
+        
+        showToast('Задание выполнено!', 'success');
+    } else {
+        // Неправильный ответ
+        showModal(
+            '❌ Неправильно',
+            currentTask.explanation,
+            '💡'
+        );
+        
+        tg.sendData(JSON.stringify({
+            action: 'task_completed',
+            user_id: userData.id,
+            task_id: currentTask.id,
+            correct: false
+        }));
+        
+        showToast('Попробуйте снова!', 'error');
+    }
+}
 
         // Получение награды
         function claimReward(streak) {
@@ -1271,6 +1343,29 @@
             }
         }
 
+        // Обновление статуса ежедневного задания
+function updateDailyStatus() {
+    const today = new Date().toISOString().split('T')[0];
+    const statusDiv = document.getElementById('dailyStatus');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusText = document.getElementById('statusText');
+    const statusBadge = document.getElementById('statusBadge');
+    
+    if (userData.lastActivity === today) {
+        // Уже выполнял сегодня
+        statusDiv.className = 'daily-status completed';
+        statusIcon.textContent = '✅';
+        statusText.textContent = 'Задание на сегодня выполнено!';
+        statusBadge.textContent = `Стрик: ${userData.currentStreak} 🔥`;
+    } else {
+        // Ещё не выполнял
+        statusDiv.className = 'daily-status pending';
+        statusIcon.textContent = '⏳';
+        statusText.textContent = 'Сегодня ещё не занимались';
+        statusBadge.textContent = 'Доступно';
+    }
+}
+
         // Показ уведомления
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -1318,3 +1413,4 @@
     </script>
 </body>
 </html>
+
