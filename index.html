@@ -751,8 +751,8 @@
     </div>
 
     <script>
-        // Инициализация Telegram WebApp
-        const tg = window.Telegram?.WebApp;
+    // Инициализация Telegram WebApp
+    const tg = window.Telegram?.WebApp;
     
     if (!tg) {
         console.error('Telegram WebApp не доступен');
@@ -765,24 +765,24 @@
         tg.MainButton.setText('Закрыть');
         tg.MainButton.hide();
 
-	// Получаем данные пользователя
+        // Получаем данные пользователя
         const user = tg.initDataUnsafe?.user;
-        if (user) {
-            console.log('Пользователь:', user);
-
-        // Данные пользователя (в реальном приложении получаем от бота)
+        
+        // Данные пользователя
         let userData = {
-            id: tg.initDataUnsafe?.user?.id || 123456,
-            firstName: tg.initDataUnsafe?.user?.first_name || 'Пользователь',
-            lastName: tg.initDataUnsafe?.user?.last_name || '',
-            username: tg.initDataUnsafe?.user?.username || 'username',
+            id: user?.id || 123456,
+            firstName: user?.first_name || 'Пользователь',
+            lastName: user?.last_name || '',
+            username: user?.username || 'username',
             currentStreak: 7,
             maxStreak: 15,
             totalTasks: 45,
             starsBalance: 12,
             lastActivity: new Date().toISOString().split('T')[0],
-            claimedRewards: [7] // ID полученных наград
+            claimedRewards: [7]
         };
+
+        console.log('Пользовательские данные:', userData);
 
         // База заданий
         const tasksDB = [
@@ -1230,6 +1230,8 @@
                 user_id: userData.id
             }));
         });
-    </script>
+    } // <-- Этой закрывающей скобки не хватало для else
+</script>
 </body>
+
 </html>
